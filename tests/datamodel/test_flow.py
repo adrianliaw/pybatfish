@@ -37,7 +37,8 @@ def test_exit_output_iface_step_detail_str():
 
 def test_transformation_step_detail_str():
     no_diffs = TransformationStepDetail("type", [])
-    one_diff = TransformationStepDetail("type", [FlowDiff("field", "old", "new")])
+    one_diff = TransformationStepDetail("type",
+                                        [FlowDiff("field", "old", "new")])
     two_diffs = TransformationStepDetail("type",
                                          [FlowDiff("field1", "old1", "new1"),
                                           FlowDiff("field2", "old2", "new2")])
@@ -49,7 +50,8 @@ def test_transformation_step_detail_str():
     assert str(step) == "ACTION(type field: old -> new)"
 
     step = Step(two_diffs, "ACTION")
-    assert str(step) == "ACTION(type field1: old1 -> new1, field2: old2 -> new2)"
+    assert str(
+        step) == "ACTION(type field1: old1 -> new1, field2: old2 -> new2)"
 
 
 def test_flow_deserialization():
@@ -327,7 +329,8 @@ def test_flow_repr_html_start_location():
     flow_dict['ingressInterface'] = "ingressIface"
 
     flow = Flow.from_dict(flow_dict)
-    assert ("Start Location: ingressNode interface=ingressIface" in flow._repr_html_lines())
+    assert (
+                "Start Location: ingressNode interface=ingressIface" in flow._repr_html_lines())
 
 
 def test_flow_repr_html_state():
@@ -402,6 +405,82 @@ def test_flow_str_ports():
     assert ("5.5.1.1:2345" not in s)
 
 
+def test_flow_repr_html_tcp_flags():
+    flow_dict = {
+        "dscp": 0,
+        "dstIp": "2.1.1.1",
+        "dstPort": 0,
+        "ecn": 0,
+        "fragmentOffset": 0,
+        "icmpCode": 0,
+        "icmpVar": 0,
+        "ingressNode": "ingress",
+        "ipProtocol": "TCP",
+        "packetLength": 0,
+        "srcIp": "5.5.1.1",
+        "srcPort": 0,
+        "state": "NEW",
+        "tag": "BASE",
+        "tcpFlagsAck": 0,
+        "tcpFlagsCwr": 0,
+        "tcpFlagsEce": 0,
+        "tcpFlagsFin": 0,
+        "tcpFlagsPsh": 0,
+        "tcpFlagsRst": 0,
+        "tcpFlagsSyn": 0,
+        "tcpFlagsUrg": 0
+    }
+    assert ("TCP flags" not in Flow.from_dict(flow_dict)._repr_html_())
+
+    # set a flag
+    flow_dict['tcpFlagsAck'] = 1
+    assert ("TCP flags: {}".format(TcpFlags(ack=1)) in Flow.from_dict(
+        flow_dict)._repr_html_())
+
+    # ip protocol could be a number
+    flow_dict['ipProtocol'] = "6"
+    assert ("TCP flags: {}".format(TcpFlags(ack=1)) in Flow.from_dict(
+        flow_dict)._repr_html_())
+
+
+def test_flow_str_tcp_flags():
+    flow_dict = {
+        "dscp": 0,
+        "dstIp": "2.1.1.1",
+        "dstPort": 0,
+        "ecn": 0,
+        "fragmentOffset": 0,
+        "icmpCode": 0,
+        "icmpVar": 0,
+        "ingressNode": "ingress",
+        "ipProtocol": "TCP",
+        "packetLength": 0,
+        "srcIp": "5.5.1.1",
+        "srcPort": 0,
+        "state": "NEW",
+        "tag": "BASE",
+        "tcpFlagsAck": 0,
+        "tcpFlagsCwr": 0,
+        "tcpFlagsEce": 0,
+        "tcpFlagsFin": 0,
+        "tcpFlagsPsh": 0,
+        "tcpFlagsRst": 0,
+        "tcpFlagsSyn": 0,
+        "tcpFlagsUrg": 0
+    }
+    assert "tcpFlags" not in str(Flow.from_dict(flow_dict))
+
+    # set a flag
+    flow_dict['tcpFlagsAck'] = 1
+    assert "tcpFlags=({})".format(TcpFlags(ack=1)) in str(Flow.from_dict(
+        flow_dict))
+
+    # ip protocol could be a number
+    flow_dict['ipProtocol'] = "6"
+    assert "tcpFlags=({})".format(TcpFlags(ack=1)) in str(Flow.from_dict(
+        flow_dict))
+
+
 def test_SetupSessionStepDetail_from_dict():
     d = {'type': 'SetupSession', 'action': 'SETUP_SESSION'}
     assert SetupSessionStepDetail.from_dict(d) == SetupSessionStepDetail()
@@ -418,6 +497,12 @@ def test_MatchSessionStepDetail_from_dict():
 
 def test_MatchSessionStepDetail_str():
     assert str(MatchSessionStepDetail()) == ""
+
+
+def test_TcpFlag_str():
+    assert str(TcpFlags()) == "All flags are 0"
+    assert str(TcpFlags(ack=True)) == "ack=1"
+    assert str(TcpFlags(ack=True, ece=True)) == "ack=1,ece=1"
 
 
 if __name__ == "__main__":

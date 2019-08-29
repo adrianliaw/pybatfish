@@ -126,6 +126,7 @@ class Flow(DataModelElement):
         # exclude the tag field
         iface_str = self._iface_str()
         vrf_str = self._vrf_str()
+        tcp_flags = self.get_tcp_flags()
         return \
             "start={node}{iface}{vrf} [{src}->{dst}" \
             " {ip_proto}{dscp}{ecn}{offset}{length}{state}{flags}]".format(
@@ -143,9 +144,9 @@ class Flow(DataModelElement):
                         if self.packetLength != 0 else ""),
                 state=(" state={}".format(self.state)
                        if self.state != "NEW" else ""),
-                flags=(" tcpFlags={}".format(self.get_flag_str()) if
-                       self.ipProtocol == 6 and
-                       self.get_flag_str() != "00000000" else ""))
+                flags=(" tcpFlags=({})".format(str(tcp_flags))
+                       if (self.ipProtocol == "6" or self.ipProtocol == "TCP")
+                            and tcp_flags != TcpFlags() else ""))
 
     def _vrf_str(self):
         vrf_str = " vrf={}".format(self.ingressVrf) \
@@ -157,16 +158,12 @@ class Flow(DataModelElement):
             if self.ingressInterface is not None else ""
         return iface_str
 
-    def get_flag_str(self):
-        # type: () -> str
-        return "{}{}{}{}{}{}{}{}".format(self.tcpFlagsAck,
-                                         self.tcpFlagsCwr,
-                                         self.tcpFlagsEce,
-                                         self.tcpFlagsFin,
-                                         self.tcpFlagsPsh,
-                                         self.tcpFlagsRst,
-                                         self.tcpFlagsSyn,
-                                         self.tcpFlagsUrg)
+    def get_tcp_flags(self):
+        # type: () -> TcpFlags
+        return TcpFlags(ack=self.tcpFlagsAck, cwr=self.tcpFlagsCwr,
+                        ece=self.tcpFlagsEce, fin=self.tcpFlagsFin,
+                        psh=self.tcpFlagsPsh, rst=self.tcpFlagsRst,
+                        syn=self.tcpFlagsSyn, urg=self.tcpFlagsUrg)
 
     def get_ip_protocol_str(self):
         # type: () -> str
@@ -204,6 +201,10 @@ class Flow(DataModelElement):
         lines.append('IP Protocol: %s' % self.get_ip_protocol_str())
         if self.state != "NEW":
             lines.append('Firewall Classification: %s' % self.state)
+        tcp_flags = self.get_tcp_flags()
+        if (self.get_ip_protocol_str() == "TCP" or self.get_ip_protocol_str() == "6") \
+                and tcp_flags != TcpFlags():
+            lines.append("TCP flags: {}".format(tcp_flags))
         return lines
 
     def _ip_port(self, ip, port):
@@ -491,7 +492,8 @@ class FilterStepDetail(DataModelElement):
     @classmethod
     def from_dict(cls, json_dict):
         # type: (Dict) -> FilterStepDetail
-        return FilterStepDetail(json_dict.get("filter", ""), json_dict.get("type", ""))
+        return FilterStepDetail(json_dict.get("filter", ""),
+                                json_dict.get("type", ""))
 
     def __str__(self):
         # type: () -> str
@@ -710,6 +712,14 @@ class TcpFlags(DataModelElement):
             rst=json_dict['rst'],
             syn=json_dict['syn'],
             urg=json_dict['urg'])
+
+    def __str__(self):
+        flag_strings = []
+        for flag in ['ack', 'cwr', 'ece', 'fin', 'psh', 'rst', 'syn', 'urg']:
+            if self.__getattribute__(flag):
+                flag_strings.append("{}=1".format(flag))
+        return ",".join(flag_strings) if len(
+            flag_strings) > 0 else "All flags are 0"
 
 
 @attr.s(frozen=True)
