@@ -21,7 +21,7 @@ See [www.batfish.org](http://www.batfish.org) for technical information on how i
 
 ## What kinds of correctness checks does Batfish support?
 
-[![Getting to know Batfish](batfish_video.png)](https://www.youtube.com/channel/UCA-OUW_3IOt9U_s60KvmJYA/videos)
+[![Getting to know Batfish](https://raw.githubusercontent.com/batfish/pybatfish/master/batfish_video.png)](https://www.youtube.com/channel/UCA-OUW_3IOt9U_s60KvmJYA/videos)
 
 The [Batfish YouTube channel](https://www.youtube.com/channel/UCA-OUW_3IOt9U_s60KvmJYA/videos) (which you can subscribe to for new content) illustrates many types of checks. These checks span a range of network behaviors and device configuration attributes.
 #### Configuration Compliance
